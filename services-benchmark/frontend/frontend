@@ -1,0 +1,5 @@
+frontend/
+|   |-- src/
+|   |-- Dockerfile          # Dockerfile per l'app React/Vue/Angular
+|   |-- package.json
+|   |-- ...
