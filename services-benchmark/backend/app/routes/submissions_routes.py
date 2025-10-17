@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify, send_file
 import time
-from app.services import submission_service
-from config import Config
+from ..services import submission_service
+from ..config import Config
 
 submissions_bp = Blueprint('submissions', __name__)
 

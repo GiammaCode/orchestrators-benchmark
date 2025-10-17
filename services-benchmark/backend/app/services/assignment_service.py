@@ -1,6 +1,6 @@
 from datetime import datetime
 from bson.objectid import ObjectId
-from app.extensions import mongo
+from ..extensions import mongo
 
 
 def create_assignment(data):

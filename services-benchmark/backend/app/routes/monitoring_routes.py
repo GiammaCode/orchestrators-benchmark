@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify
 from datetime import datetime
-from app.services import monitoring_service
+from ..services import monitoring_service
 
 monitoring_bp = Blueprint('monitoring', __name__)
 

@@ -1,7 +1,7 @@
 import os
 from datetime import datetime
-from app.extensions import mongo
-from config import Config
+from ..extensions import mongo
+from ..config import Config
 
 
 def check_health():

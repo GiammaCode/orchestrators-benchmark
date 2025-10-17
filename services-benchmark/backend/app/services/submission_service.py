@@ -1,11 +1,10 @@
 import hashlib
 from datetime import datetime
 from bson.objectid import ObjectId
-from app.extensions import mongo
-from config import Config
+from ..extensions import mongo
+from ..config import Config
 
-
-def create_submission_service(student_id, assignment_id, course_id, file):
+def create_submission(student_id, assignment_id, course_id, file):
     """
      Service layer: manages the business logic for creating a submission.
     """
