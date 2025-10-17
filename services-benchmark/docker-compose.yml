@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  # Servizio Backend
+  backend:
+    build:
+      context: ./backend  # Cerca il Dockerfile nella cartella backend
+    ports:
+      - "5000:5000"       # Mappa la porta 5000 del container alla porta 5000 del tuo PC
+    volumes:
+      - ./data:/app/data/submissions # Monta una cartella locale per salvare i file
+    environment:
+      # Passa l'URI di MongoDB, usando il nome del servizio 'mongo'
+      - MONGO_URI=mongodb://${MONGO_USER}:${MONGO_PASS}@mongo:27017/
+      - UPLOAD_DIR=/app/data/submissions
+    depends_on:
+      - mongo             # Dice a Docker di avviare mongo prima del backend
+
+  # Servizio Database
+  mongo:
+    image: mongo:latest
+    environment:
+      # Prende le credenziali dal file .env
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_USER}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASS}
+    volumes:
+      - mongo-data:/data/db # Volume per rendere i dati persistenti
+
+volumes:
+  mongo-data: # Definisce il volume nominato
