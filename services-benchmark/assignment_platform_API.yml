@@ -1,0 +1,340 @@
+openapi: 3.0.0
+info:
+  title: Submission Management API
+  description: An API for managing student assignment submissions and configurations.
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080/api
+    description: Development server
+
+tags:
+  - name: Submission Management
+    description: Operations for students to submit and view assignments.
+  - name: Assignment Configuration
+    description: Operations for admins to create and manage assignments.
+  - name: Monitoring & Health
+    description: Endpoints for monitoring application health and statistics.
+
+paths:
+  /submit:
+    post:
+      tags:
+        - Submission Management
+      summary: Upload a new submission
+      description: Uploads a file for a specific assignment on behalf of a student.
+      operationId: uploadSubmission
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - studentId
+                - assignmentId
+                - submissionFile
+              properties:
+                studentId:
+                  type: string
+                  description: The ID of the student submitting the assignment.
+                  example: "student123"
+                assignmentId:
+                  type: string
+                  description: The ID of the assignment.
+                  example: "assign_math101_hw1"
+                submissionFile:
+                  type: string
+                  format: binary
+                  description: The assignment file to upload.
+      responses:
+        '201':
+          description: Submission created successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  submissionId:
+                    type: string
+                    example: "sub_f9d8a7c6b5"
+        '400':
+          description: Bad request (e.g., file too large, past deadline).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /submissions/{studentId}:
+    get:
+      tags:
+        - Submission Management
+      summary: Get submissions for a student
+      description: Retrieves a complete list of submissions for a specific student, ordered by timestamp in descending order.
+      operationId: getStudentSubmissions
+      parameters:
+        - name: studentId
+          in: path
+          required: true
+          description: The ID of the student to retrieve submissions for.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: A list of submissions.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Submission'
+        '404':
+          description: Student not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /download/{submissionId}:
+    get:
+      tags:
+        - Submission Management
+      summary: Download a submission file
+      description: Downloads the file associated with a specific submission ID.
+      operationId: downloadSubmissionFile
+      parameters:
+        - name: submissionId
+          in: path
+          required: true
+          description: The ID of the submission to download.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The submission file.
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Submission not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /assignments:
+    post:
+      tags:
+        - Assignment Configuration
+      summary: Create a new assignment
+      description: Defines a new assignment with its properties. Requires admin privileges.
+      operationId: createAssignment
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssignmentInput'
+      responses:
+        '201':
+          description: Assignment created successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Assignment'
+        '401':
+          description: Unauthorized.
+        '403':
+          description: Forbidden (user is not an admin).
+
+  /assignments/active:
+    get:
+      tags:
+        - Assignment Configuration
+      summary: Get active assignments
+      description: Returns a list of all assignments that are still open (deadline has not passed).
+      operationId: getActiveAssignments
+      responses:
+        '200':
+          description: A list of active assignments with their submission counts.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AssignmentWithCount'
+
+  /assignments/{assignmentId}:
+    get:
+      tags:
+        - Assignment Configuration
+      summary: Get assignment details
+      description: Retrieves details for a single assignment, including the total number of submissions received.
+      operationId: getAssignmentDetails
+      parameters:
+        - name: assignmentId
+          in: path
+          required: true
+          description: The ID of the assignment to retrieve.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Detailed information about the assignment.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssignmentWithCount'
+        '404':
+          description: Assignment not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /health:
+    get:
+      tags:
+        - Monitoring & Health
+      summary: Health check
+      description: Health check endpoint that verifies connectivity to MongoDB and storage volume accessibility.
+      operationId: getHealthCheck
+      responses:
+        '200':
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthStatus'
+        '503':
+          description: Service is unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthStatus'
+
+  /stats:
+    get:
+      tags:
+        - Monitoring & Health
+      summary: Get application statistics
+      description: Returns real-time application metrics.
+      operationId: getApplicationStats
+      responses:
+        '200':
+          description: A JSON object with application metrics.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppStats'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Submission:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "sub_f9d8a7c6b5"
+        studentId:
+          type: string
+          example: "student123"
+        assignmentId:
+          type: string
+          example: "assign_math101_hw1"
+        fileName:
+          type: string
+          example: "homework1.pdf"
+        timestamp:
+          type: string
+          format: date-time
+          example: "2025-10-21T10:00:00Z"
+    AssignmentInput:
+      type: object
+      required:
+        - course
+        - title
+        - deadline
+        - maxFileSizeMB
+      properties:
+        course:
+          type: string
+          example: "Computer Science 101"
+        title:
+          type: string
+          example: "Homework 1: Algorithms"
+        deadline:
+          type: string
+          format: date-time
+          example: "2025-10-31T23:59:59Z"
+        maxFileSizeMB:
+          type: integer
+          format: int32
+          example: 10
+    Assignment:
+      allOf:
+        - $ref: '#/components/schemas/AssignmentInput'
+        - type: object
+          properties:
+            id:
+              type: string
+              example: "assign_math101_hw1"
+    AssignmentWithCount:
+      allOf:
+        - $ref: '#/components/schemas/Assignment'
+        - type: object
+          properties:
+            submissionCount:
+              type: integer
+              format: int32
+              example: 42
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [ok, error]
+          example: "ok"
+        mongodb:
+          type: string
+          enum: [connected, disconnected]
+          example: "connected"
+        storage:
+          type: string
+          enum: [accessible, inaccessible]
+          example: "accessible"
+    AppStats:
+      type: object
+      properties:
+        dailySubmissions:
+          type: integer
+          example: 150
+        hourlySubmissions:
+          type: integer
+          example: 25
+        totalSubmissions:
+          type: integer
+          example: 2345
+        distributionPerAssignment:
+          type: object
+          additionalProperties:
+            type: integer
+          example:
+            assign_math101_hw1: 42
+            assign_cs101_p1: 89
+    Error:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
