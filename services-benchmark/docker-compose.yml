@@ -13,10 +13,6 @@ services:
       - mongodb_data:/data/db
     networks:
       - app-network
-    # Usa le credenziali dal file .env
-    environment:
-      - MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME}
-      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
     healthcheck:
       test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
       interval: 10s
@@ -32,9 +28,7 @@ services:
     ports:
       - "5000:5000"
     environment:
-      # L'URI ora include le credenziali prese dal file .env
-      - MONGO_URI=mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@mongodb:27017/
-      # In produzione, cambia FLASK_ENV in 'production'
+      - MONGO_URI=mongodb://mongodb:27017/
       - FLASK_ENV=development
     volumes:
       - ./data/submissions:/data/submissions
