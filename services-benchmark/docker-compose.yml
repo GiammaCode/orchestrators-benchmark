@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+    ports:
+      - "5001:5000"
+    volumes:
+      - ./backend:/app
+      - uploads_volume:/app/uploads
+    environment:
+      # L'URI di connessione per PyMongo, punta al servizio 'db'
+      - MONGO_URI=mongodb://mongoadmin:secret@db:27017/homework_db?authSource=admin
+      - FLASK_APP=app.py
+      - FLASK_RUN_HOST=0.0.0.0
+      - FLASK_DEBUG=1 # Abilita il debug e il reloader di Flask
+    depends_on:
+      - db
+    networks:
+      - homework-net
+
+  db:
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=mongoadmin
+      - MONGO_INITDB_ROOT_PASSWORD=secret
+    volumes:
+      - mongo_data:/data/db # Volume per la persistenza del database
+    networks:
+      - homework-net
+
+# Definiamo i network e i volumi
+networks:
+  homework-net:
+    driver: bridge
+
+volumes:
+  mongo_data: # Volume per i dati di MongoDB
+  uploads_volume: # Volume per i file delle consegne
