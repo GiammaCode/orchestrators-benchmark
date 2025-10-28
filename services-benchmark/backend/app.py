@@ -43,15 +43,5 @@ def hello_world():
     })
 
 
-# ==================================================
-# == Altri Endpoints (da aggiungere)
-# ==================================================
-
-# ... (Aggiungeremo /api/assignments, /api/submissions, ecc. qui)
-
-# --- Avvio del server ---
-
 if __name__ == '__main__':
-    # Flask userà le variabili d'ambiente FLASK_RUN_HOST e FLASK_DEBUG
-    # definite nel docker-compose.yml
     app.run()
