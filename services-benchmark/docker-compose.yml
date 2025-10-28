@@ -11,7 +11,7 @@ services:
       - uploads_volume:/app/uploads
     environment:
       # L'URI di connessione per PyMongo, punta al servizio 'db'
-      - MONGO_URI=mongodb://mongoadmin:secret@db:27017/homework_db?authSource=admin
+      - MONGO_URI=mongodb://mongoadmin:secret@db:27017/submission_management_db?authSource=admin
       - FLASK_APP=app.py
       - FLASK_RUN_HOST=0.0.0.0
       - FLASK_DEBUG=1 # Abilita il debug e il reloader di Flask
