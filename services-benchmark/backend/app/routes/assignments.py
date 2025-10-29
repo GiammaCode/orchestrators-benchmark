@@ -1,27 +1,24 @@
 import datetime
 from flask import Blueprint, request, Response, jsonify
-from ..services import mongodb  # Importa le collezioni inizializzate
-from ..utils import json_encoder  # Importa l'helper JSON
-
-# 1. Creiamo un Blueprint per raggruppare le rotte
-# /api/assignments sarà il prefisso per tutte le rotte in questo file
-assignments_bp = Blueprint('assignments_bp', __name__, url_prefix='/api/assignments')
+from ..services import mongodb
+from ..utils import json_encoder
 
 
-# --- Definizione delle Rotte ---
+assignments_bp = Blueprint('assignments_bp', __name__, url_prefix='/assignments')
 
 @assignments_bp.route('', methods=['POST'])
 def create_assignment():
-    """(Professore) Crea un nuovo compito."""
+    """
+    Creates a new assignment - professor side
+    """
 
-    # Controlliamo se la collezione è stata inizializzata
     if mongodb.assignments_collection is None:
-        return jsonify({"error": "Database non connesso"}), 500
+        return jsonify({"error": "Database not connected"}), 500
 
     try:
         data = request.json
         if not data or 'title' not in data:
-            return jsonify({"error": "Titolo mancante"}), 400
+            return jsonify({"error": "Title missing"}), 400
 
         new_assignment = {
             "title": data.get('title'),
@@ -32,9 +29,8 @@ def create_assignment():
 
         result = mongodb.assignments_collection.insert_one(new_assignment)
 
-        # Recupera il documento appena creato per restituirlo
+        # Retrieve the document to return it
         created_doc = mongodb.assignments_collection.find_one({"_id": result.inserted_id})
-
         return Response(json_encoder.bson_to_json(created_doc), mimetype='application/json'), 201
 
     except Exception as e:
@@ -43,10 +39,12 @@ def create_assignment():
 
 @assignments_bp.route('', methods=['GET'])
 def get_all_assignments():
-    """(Studente/Professore) Restituisce l'elenco di tutti i compiti."""
-
+    """
+    Retrieves all existing assignments - professor & student side
+    :return:
+    """
     if mongodb.assignments_collection is None:
-        return jsonify({"error": "Database non connesso"}), 500
+        return jsonify({"error": "Database not connected"}), 500
 
     try:
         assignments = list(mongodb.assignments_collection.find({}))
