@@ -1,7 +1,10 @@
 import datetime
+import os
 from flask import Blueprint, request, Response, jsonify
 from ..services import mongodb
 from ..utils import json_encoder
+from bson import ObjectId
+
 
 
 assignments_bp = Blueprint('assignments_bp', __name__, url_prefix='/assignments')
@@ -50,3 +53,31 @@ def get_all_assignments():
         return Response(json_encoder.bson_to_json(assignments), mimetype='application/json')
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+@assignments_bp.route('/<assignment_id>', methods=['GET'])
+def get_assignment_by_id(assignment_id):
+    """(Studente) Restituisce i dettagli di un singolo compito."""
+
+    if mongodb.assignments_collection is None:
+        return jsonify({"error": "Database non connesso"}), 500
+
+    try:
+        if not ObjectId.is_valid(assignment_id):
+            return jsonify({"error": "ID assignment non valido"}), 400
+
+        assignment = mongodb.assignments_collection.find_one({"_id": ObjectId(assignment_id)})
+
+        if not assignment:
+            return jsonify({"error": "Assignment non trovato"}), 404
+
+        return Response(json_encoder.bson_to_json(assignment), mimetype='application/json')
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# --- ENDPOINT SPOSTATO E IMPLEMENTATO ---
+@assignments_bp.route('/<assignment_id>/submit', methods=['POST'])
+def create_submission(assignment_id):
+    """(Studente) Invia una consegna per un compito."""
+    return "POST di una submissions"

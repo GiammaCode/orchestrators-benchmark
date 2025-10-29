@@ -89,14 +89,14 @@ paths:
         content:
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/SubmissionPayload'
+              $ref: '#/components/schemas/SubmissionPayload' # <-- Questo ora punta al payload modificato
       responses:
         '201':
           description: Submission successful.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Submission'
+                $ref: '#/components/schemas/Submission' # <-- Questo ora punta alla submission modificata
 
   # --- Professor Area ---
 
@@ -114,16 +114,16 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Submission'
+                  $ref: '#/components/schemas/Submission' # <-- Questo ora punta alla submission modificata
 
-  /submissions/{submissionId}:
+  /submissions/{idSubmission}: # <-- MODIFICATO (era {submissionId})
     get:
       tags:
         - Professor
       summary: (Professor) Submission details
       description: Returns the details of a single specific submission.
       parameters:
-        - name: submissionId
+        - name: idSubmission # <-- MODIFICATO (era submissionId)
           in: path
           required: true
           schema:
@@ -135,7 +135,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Submission'
+                $ref: '#/components/schemas/Submission' # <-- Questo ora punta alla submission modificata
 
 # --- Components (Data Models) ---
 
@@ -189,73 +189,55 @@ components:
         - description
         - due_date
 
-    # Model for a File (nested in Submission)
-    File:
-      type: object
-      properties:
-        filename:
-          type: string
-          example: "project.zip"
-        url:
-          type: string
-          format: uri
-          example: "/uploads/project.zip"
-      required:
-        - filename
-        - url
+    # --- MODIFICHE INIZIANO QUI ---
 
-    # Model for a Submission (Read)
+    # [RIMOSSO] Il modello 'File' non è più referenziato da 'Submission'.
+    # E' stato rimosso per pulizia.
+
+    # Model for a Submission (Read) - MODIFICATO
     Submission:
       type: object
       properties:
-        _id:
+        idSubmission: # <-- MODIFICATO (da _id)
           type: string
-          description: ObjectId
+          description: ObjectId della submission
           readOnly: true
-        assignment_id:
+        idAssignment: # <-- MODIFICATO (da assignment_id e senza _title)
           type: string
           description: Assignment ObjectId
           readOnly: true
-        assignment_title:
-          type: string
-          description: Assignment title (denormalized)
-          example: "Final Flask Project"
-          readOnly: true
-        student_name:
+        student_name: # <-- MANTENUTO (come "Nome studente")
           type: string
           example: "John Doe"
-        submitted_at:
+        submitted_at: # <-- MANTENUTO
           type: string
           format: date-time
           readOnly: true
-        files:
-          type: array
-          items:
-            $ref: '#/components/schemas/File'
-          readOnly: true
+        path_file: # <-- MODIFICATO (da 'files' array)
+          type: string
+          format: uri
+          description: "Percorso (URL) del file consegnato"
+          example: "/uploads/project_johndoe.zip"
+          readOnly: true # Il server genera questo percorso dopo il caricamento
       required:
-        - _id
-        - assignment_id
-        - assignment_title
+        - idSubmission
+        - idAssignment
         - student_name
         - submitted_at
-        - files
+        - path_file
 
-    # Model for a Submission Payload (Write)
+    # Model for a Submission Payload (Write) - MODIFICATO
     SubmissionPayload:
       type: object
       properties:
         student_name:
           type: string
-          description: "Student's full name (combined)"
+          description: "Nome e cognome dello studente"
           example: "John Doe"
-        files:
-          type: array
-          items:
-            type: string
-            format: binary
-          description: One or more files to upload.
+        file: # <-- MODIFICATO (da 'files' array a 'file' singolo)
+          type: string
+          format: binary
+          description: Il singolo file da caricare.
       required:
         - student_name
-        - files
-
+        - file

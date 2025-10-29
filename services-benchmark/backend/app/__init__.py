@@ -1,10 +1,11 @@
 import os
-from flask import Flask
+from flask import Flask, send_from_directory
 from flask_cors import CORS
 from .services import mongodb
 from .routes import assignments
 from .routes import submissions
 
+UPLOAD_FOLDER = '/app/uploads'
 
 def create_app():
     """
@@ -12,6 +13,12 @@ def create_app():
     """
     app = Flask(__name__)
     CORS(app)
+
+    app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+    # Crea la cartella se non esiste (utile per i test locali)
+    if not os.path.exists(UPLOAD_FOLDER):
+        os.makedirs(UPLOAD_FOLDER)
+
     mongo_uri = os.environ.get('MONGO_URI')
     try:
         mongodb.init_db(mongo_uri)
@@ -30,5 +37,14 @@ def create_app():
             "message": "Hello World! Flask server is alive.",
             "database_status": db_status
         }
+
+    @app.route('/uploads/<path:filename>')
+    def serve_upload(filename):
+        """Serve i file dalla cartella di upload."""
+        return send_from_directory(
+            app.config['UPLOAD_FOLDER'],
+            filename,
+            as_attachment=True  # Forza il download
+        )
 
     return app
