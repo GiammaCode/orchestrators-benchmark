@@ -3,6 +3,7 @@ from flask import Flask
 from flask_cors import CORS
 from .services import mongodb
 from .routes import assignments
+from .routes import submissions
 
 
 def create_app():
@@ -19,7 +20,7 @@ def create_app():
         print(f"MongoDB connection error: {e}")
 
     app.register_blueprint(assignments.assignments_bp)
-    # TO DO, new blueprint per le submissions
+    app.register_blueprint(submissions.submissions_bp)
 
     @app.route('/')
     def hello_world():

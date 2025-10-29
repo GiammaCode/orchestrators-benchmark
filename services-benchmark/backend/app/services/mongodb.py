@@ -5,13 +5,14 @@ from pymongo.errors import ConnectionFailure
 client = None
 db = None
 assignments_collection = None
+submissions_collection = None
 
 
 def init_db(mongo_uri):
     """
     Initializes the database and attach the collections
     """
-    global client, db, assignments_collection
+    global client, db, assignments_collection, submissions_collection
 
     if not mongo_uri:
         print("Error: mongo_uri not setted")
@@ -23,7 +24,7 @@ def init_db(mongo_uri):
 
     db = client.homework_db
     assignments_collection = db.assignments
-    # submissions_collection = db.submissions
+    submissions_collection = db.submissions
 
 
 def check_db_connection():

@@ -41,7 +41,6 @@ def create_assignment():
 def get_all_assignments():
     """
     Retrieves all existing assignments - professor & student side
-    :return:
     """
     if mongodb.assignments_collection is None:
         return jsonify({"error": "Database not connected"}), 500
