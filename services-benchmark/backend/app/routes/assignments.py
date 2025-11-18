@@ -76,8 +76,52 @@ def get_assignment_by_id(assignment_id):
         return jsonify({"error": str(e)}), 500
 
 
-# --- ENDPOINT SPOSTATO E IMPLEMENTATO ---
 @assignments_bp.route('/<assignment_id>/submit', methods=['POST'])
 def create_submission(assignment_id):
-    """(Studente) Invia una consegna per un compito."""
-    return "POST di una submissions"
+    """
+    (Studente) Invia un compito.
+    Il server genera ID e data automaticamente.
+    """
+
+    if mongodb.assignments_collection is None or mongodb.submissions_collection is None:
+        return jsonify({"error": "Database non connesso"}), 500
+
+    try:
+        # 1. Validazione ID Assignment dall'URL
+        if not ObjectId.is_valid(assignment_id):
+            return jsonify({"error": "ID assignment non valido nell'URL"}), 400
+
+        # Verifica che l'assignment esista
+        assignment = mongodb.assignments_collection.find_one({"_id": ObjectId(assignment_id)})
+        if not assignment:
+            return jsonify({"error": "Assignment non trovato"}), 404
+
+        # 2. Estrazione dati dal body (solo quello che invii tu)
+        data = request.json
+        if not data:
+            return jsonify({"error": "Payload mancante"}), 400
+
+        # Campi obbligatori ridotti
+        if 'student_name' not in data or 'result' not in data:
+            return jsonify({"error": "Mancano student_name o result"}), 400
+
+        # 3. Generazione automatica dei dati mancanti
+        submission_oid = ObjectId()  # Genera un nuovo ObjectId univoco qui
+
+        new_submission = {
+            "_id": submission_oid,
+            "idSubmission": str(submission_oid),  # Lo salviamo anche come stringa se serve al frontend
+            "idAssignment": assignment_id,  # Preso dall'URL
+            "student_name": data['student_name'],
+            "submitted_at": datetime.datetime.now(datetime.timezone.utc),  # Data corrente server-side
+            "result": data['result']
+        }
+
+        # 4. Inserimento
+        mongodb.submissions_collection.insert_one(new_submission)
+
+        # Restituisce l'oggetto creato
+        return Response(json_encoder.bson_to_json(new_submission), mimetype='application/json'), 201
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500

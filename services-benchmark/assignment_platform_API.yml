@@ -76,7 +76,7 @@ paths:
       tags:
         - Student
       summary: (Student) Submit homework
-      description: Allows a student to submit homework for a specific assignment.
+      description: Allows a student to submit homework for a specific assignment with explicit IDs and timestamp.
       parameters:
         - name: assignmentId
           in: path
@@ -87,16 +87,16 @@ paths:
       requestBody:
         required: true
         content:
-          multipart/form-data:
+          application/json: # Cambiato in JSON per coerenza con i dati richiesti, ma puoi rimettere multipart se invii file
             schema:
-              $ref: '#/components/schemas/SubmissionPayload' # <-- Questo ora punta al payload modificato
+              $ref: '#/components/schemas/SubmissionPayload'
       responses:
         '201':
           description: Submission successful.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Submission' # <-- Questo ora punta alla submission modificata
+                $ref: '#/components/schemas/Submission'
 
   # --- Professor Area ---
 
@@ -114,16 +114,16 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Submission' # <-- Questo ora punta alla submission modificata
+                  $ref: '#/components/schemas/Submission'
 
-  /submissions/{idSubmission}: # <-- MODIFICATO (era {submissionId})
+  /submissions/{idSubmission}:
     get:
       tags:
         - Professor
       summary: (Professor) Submission details
       description: Returns the details of a single specific submission.
       parameters:
-        - name: idSubmission # <-- MODIFICATO (era submissionId)
+        - name: idSubmission
           in: path
           required: true
           schema:
@@ -135,7 +135,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Submission' # <-- Questo ora punta alla submission modificata
+                $ref: '#/components/schemas/Submission'
 
 # --- Components (Data Models) ---
 
@@ -189,55 +189,60 @@ components:
         - description
         - due_date
 
-    # --- MODIFICHE INIZIANO QUI ---
-
-    # [RIMOSSO] Il modello 'File' non è più referenziato da 'Submission'.
-    # E' stato rimosso per pulizia.
-
-    # Model for a Submission (Read) - MODIFICATO
+    # Model for reading a Submission
     Submission:
       type: object
       properties:
-        idSubmission: # <-- MODIFICATO (da _id)
+        idSubmission:
           type: string
           description: ObjectId della submission
-          readOnly: true
-        idAssignment: # <-- MODIFICATO (da assignment_id e senza _title)
+        idAssignment:
           type: string
           description: Assignment ObjectId
-          readOnly: true
-        student_name: # <-- MANTENUTO (come "Nome studente")
+        student_name:
           type: string
           example: "John Doe"
-        submitted_at: # <-- MANTENUTO
+        submitted_at:
           type: string
           format: date-time
-          readOnly: true
-        path_file: # <-- MODIFICATO (da 'files' array)
+        result:
           type: string
-          format: uri
-          description: "Percorso (URL) del file consegnato"
-          example: "/uploads/project_johndoe.zip"
-          readOnly: true # Il server genera questo percorso dopo il caricamento
+          example: "The result is ...."
       required:
         - idSubmission
         - idAssignment
         - student_name
         - submitted_at
-        - path_file
+        - result
 
-    # Model for a Submission Payload (Write) - MODIFICATO
+    # Model for a Submission Payload (Write) - MODIFICATO SECONDO RICHIESTA
     SubmissionPayload:
       type: object
       properties:
+        idSubmission:
+          type: string
+          description: "ID univoco della submission (generato lato client)"
+          example: "507f1f77bcf86cd799439011"
+        idAssignment:
+          type: string
+          description: "ID dell'assignment a cui si risponde"
+          example: "507f191e810c19729de860ea"
         student_name:
           type: string
           description: "Nome e cognome dello studente"
           example: "John Doe"
-        file: # <-- MODIFICATO (da 'files' array a 'file' singolo)
+        submitted_at:
           type: string
-          format: binary
-          description: Il singolo file da caricare.
+          format: date-time
+          description: "Data e ora dell'invio"
+          example: "2025-11-16T10:00:00Z"
+        result:
+          type: string
+          description: "Il contenuto o link del compito"
+          example: "https://github.com/johndoe/project"
       required:
+        - idSubmission
+        - idAssignment
         - student_name
-        - file
+        - submitted_at
+        - result
