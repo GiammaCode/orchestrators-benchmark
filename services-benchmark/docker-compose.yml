@@ -1,6 +1,27 @@
 version: '3.8'
 
 services:
+  # --- FRONTEND (React) ---
+  frontend:
+    build:
+      context: ./frontend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules # Evita di sovrascrivere i moduli interni del container
+    environment:
+      # IMPORTANTE: React gira nel browser, quindi per parlare con il backend
+      # deve usare l'indirizzo del computer host (localhost:5001), non il nome del servizio docker.
+      - REACT_APP_API_URL=http://localhost:5001
+    stdin_open: true # Necessario per react-scripts start
+    tty: true        # Necessario per react-scripts start
+    depends_on:
+      - backend
+    networks:
+      - homework-net
+
+  # --- BACKEND (Flask) ---
   backend:
     build:
       context: ./backend
@@ -10,16 +31,16 @@ services:
       - ./backend:/app
       - uploads_volume:/app/uploads
     environment:
-      # L'URI di connessione per PyMongo, punta al servizio 'db'
       - MONGO_URI=mongodb://mongoadmin:secret@db:27017/submission_management_db?authSource=admin
       - FLASK_APP=app.py
       - FLASK_RUN_HOST=0.0.0.0
-      - FLASK_DEBUG=1 # Abilita il debug e il reloader di Flask
+      - FLASK_DEBUG=1
     depends_on:
       - db
     networks:
       - homework-net
 
+  # --- DATABASE (MongoDB) ---
   db:
     image: mongo:latest
     ports:
@@ -28,15 +49,14 @@ services:
       - MONGO_INITDB_ROOT_USERNAME=mongoadmin
       - MONGO_INITDB_ROOT_PASSWORD=secret
     volumes:
-      - mongo_data:/data/db # Volume per la persistenza del database
+      - mongo_data:/data/db
     networks:
       - homework-net
 
-# Definiamo i network e i volumi
 networks:
   homework-net:
     driver: bridge
 
 volumes:
-  mongo_data: # Volume per i dati di MongoDB
-  uploads_volume: # Volume per i file delle consegne
+  mongo_data:
+  uploads_volume:
