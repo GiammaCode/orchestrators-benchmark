@@ -1,123 +1,118 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { Link } from 'react-router-dom';
 
 const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:5001";
 
 function ProfessorArea() {
-  const [activeTab, setActiveTab] = useState('create'); // 'create' o 'view'
-
-  // State per creazione Assignment
+  // State for Creating Assignment
   const [newAssign, setNewAssign] = useState({ title: '', description: '', due_date: '' });
   const [msg, setMsg] = useState('');
 
-  // State per lista Submissions
+  // State for Viewing Submissions
   const [submissions, setSubmissions] = useState([]);
 
-  const handleCreate = async (e) => {
-    e.preventDefault();
-    try {
-      await axios.post(`${API_BASE}/assignments`, newAssign);
-      setMsg('Compito creato con successo!');
-      setNewAssign({ title: '', description: '', due_date: '' });
-    } catch (error) {
-      setMsg('Errore: ' + error.message);
-    }
-  };
+  // Fetch submissions immediately on load
+  useEffect(() => {
+    fetchSubmissions();
+  }, []);
 
   const fetchSubmissions = async () => {
     try {
       const res = await axios.get(`${API_BASE}/submissions`);
       setSubmissions(res.data);
     } catch (error) {
-      console.error(error);
+      console.error("Error fetching submissions:", error);
     }
   };
 
-  // Carica le submission quando si cambia tab in 'view'
-  useEffect(() => {
-    if (activeTab === 'view') {
-      fetchSubmissions();
+  const handleCreate = async (e) => {
+    e.preventDefault();
+    try {
+      await axios.post(`${API_BASE}/assignments`, newAssign);
+      setMsg('Assignment created successfully!');
+      setNewAssign({ title: '', description: '', due_date: '' });
+      // Optional: Refresh submissions or add logic here if needed
+    } catch (error) {
+      setMsg('Error: ' + error.message);
     }
-  }, [activeTab]);
+  };
 
   return (
     <div className="page-container">
-      <h2>Area Professore</h2>
-
-      <div className="tabs">
-        <button
-          className={`tab ${activeTab === 'create' ? 'active' : ''}`}
-          onClick={() => setActiveTab('create')}>
-          Carica Nuovo Compito
-        </button>
-        <button
-          className={`tab ${activeTab === 'view' ? 'active' : ''}`}
-          onClick={() => setActiveTab('view')}>
-          Vedi Consegne
-        </button>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <h2>Professor Dashboard</h2>
+        <Link to="/" className="btn btn-outline">← Back to Home</Link>
       </div>
 
-      <div className="tab-content">
-        {activeTab === 'create' && (
-          <div className="create-section">
-            <h3>Nuovo Assignment</h3>
-            <form onSubmit={handleCreate}>
-              <div className="form-group">
-                <label>Titolo:</label>
-                <input
-                  type="text" required
-                  value={newAssign.title}
-                  onChange={e => setNewAssign({...newAssign, title: e.target.value})}
-                />
-              </div>
-              <div className="form-group">
-                <label>Descrizione:</label>
-                <textarea
-                  value={newAssign.description}
-                  onChange={e => setNewAssign({...newAssign, description: e.target.value})}
-                />
-              </div>
-              <div className="form-group">
-                <label>Data Scadenza:</label>
-                <input
-                  type="date"
-                  value={newAssign.due_date}
-                  onChange={e => setNewAssign({...newAssign, due_date: e.target.value})}
-                />
-              </div>
-              <button type="submit" className="btn btn-primary">Crea Compito</button>
-            </form>
-            {msg && <p className="msg">{msg}</p>}
-          </div>
-        )}
+      <div className="professor-grid">
 
-        {activeTab === 'view' && (
-          <div className="view-section">
-            <h3>Tutte le Consegne Ricevute</h3>
-            {submissions.length === 0 ? <p>Nessuna consegna trovata.</p> : (
+        {/* Left Column: Submissions List */}
+        <div className="panel view-section">
+          <h3>Received Submissions</h3>
+          {submissions.length === 0 ? (
+            <p>No submissions received yet.</p>
+          ) : (
+            <div style={{ overflowX: 'auto' }}>
               <table className="sub-table">
                 <thead>
                   <tr>
-                    <th>Studente</th>
-                    <th>Data Invio</th>
-                    <th>ID Assignment</th>
-                    <th>Risultato</th>
+                    <th>Student</th>
+                    <th>Date</th>
+                    <th>Result/Link</th>
                   </tr>
                 </thead>
                 <tbody>
                   {submissions.map(sub => (
                     <tr key={sub._id}>
                       <td>{sub.student_name}</td>
-                      <td>{new Date(sub.submitted_at).toLocaleString()}</td>
-                      <td>{sub.idAssignment}</td>
+                      <td>{new Date(sub.submitted_at).toLocaleDateString()} {new Date(sub.submitted_at).toLocaleTimeString()}</td>
                       <td>{sub.result}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-            )}
-          </div>
-        )}
+            </div>
+          )}
+        </div>
+
+        {/* Right Column: Create Assignment Form */}
+        <div className="panel create-section">
+          <h3>Create New Assignment</h3>
+          <form onSubmit={handleCreate}>
+            <div className="form-group">
+              <label>Title:</label>
+              <input
+                type="text" required
+                value={newAssign.title}
+                onChange={e => setNewAssign({...newAssign, title: e.target.value})}
+                placeholder="Ex: Math Homework 1"
+              />
+            </div>
+            <div className="form-group">
+              <label>Description:</label>
+              <textarea
+                rows="4"
+                value={newAssign.description}
+                onChange={e => setNewAssign({...newAssign, description: e.target.value})}
+                placeholder="Enter details..."
+              />
+            </div>
+            <div className="form-group">
+              <label>Due Date:</label>
+              <input
+                type="date"
+                value={newAssign.due_date}
+                onChange={e => setNewAssign({...newAssign, due_date: e.target.value})}
+              />
+            </div>
+            <button type="submit" className="btn btn-primary" style={{width: '100%'}}>
+              Create Assignment
+            </button>
+          </form>
+          {msg && <p className="msg">{msg}</p>}
+        </div>
+
       </div>
     </div>
   );

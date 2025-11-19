@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { Link } from 'react-router-dom';
 
 const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:5001";
 
@@ -18,7 +19,7 @@ function StudentArea() {
       const res = await axios.get(`${API_BASE}/assignments`);
       setAssignments(res.data);
     } catch (error) {
-      console.error("Errore fetch assignments", error);
+      console.error("Error fetching assignments", error);
     }
   };
 
@@ -29,80 +30,81 @@ function StudentArea() {
   };
 
   const handleSubmit = async (e) => {
-  e.preventDefault();
-  if (!selectedAssignment) return;
+    e.preventDefault();
+    if (!selectedAssignment) return;
 
-  // --- FIX INIZIO ---
-  // MongoDB a volte restituisce _id come stringa "123..."
-  // e a volte come oggetto { "$oid": "123..." } a seconda del serializer usato.
-  // Questo controllo gestisce entrambi i casi.
-  let assignmentId = selectedAssignment._id;
+    // --- FIX ID LOGIC ---
+    let assignmentId = selectedAssignment._id;
+    if (typeof assignmentId === 'object' && assignmentId !== null && assignmentId.$oid) {
+        assignmentId = assignmentId.$oid;
+    }
+    // --------------------
 
-  if (typeof assignmentId === 'object' && assignmentId !== null && assignmentId.$oid) {
-      assignmentId = assignmentId.$oid;
-  }
-
-  console.log("Invio submit per ID:", assignmentId); // Debug in console del browser
-  // --- FIX FINE ---
-
-  try {
-    // Usiamo la variabile assignmentId pulita invece di selectedAssignment._id direttamente
-    await axios.post(`${API_BASE}/assignments/${assignmentId}/submit`, formData);
-
-    setMessage('Compito inviato con successo!');
-    setTimeout(() => {
-      setSelectedAssignment(null);
-      setMessage('');
-    }, 2000);
-  } catch (error) {
-    console.error("Errore invio:", error);
-    setMessage('Errore durante l\'invio: ' + (error.response?.data?.error || error.message));
-  }
-};
+    try {
+      await axios.post(`${API_BASE}/assignments/${assignmentId}/submit`, formData);
+      setMessage('Submission successful!');
+      setTimeout(() => {
+        setSelectedAssignment(null);
+        setMessage('');
+      }, 2000);
+    } catch (error) {
+      console.error("Submission error:", error);
+      setMessage('Error: ' + (error.response?.data?.error || error.message));
+    }
+  };
 
   return (
     <div className="page-container">
-      <h2>Area Studente</h2>
-      <p>Ecco i compiti disponibili:</p>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <h2>Student Area</h2>
+        <Link to="/" className="btn btn-outline">← Back to Home</Link>
+      </div>
+
+      <p>Available Assignments:</p>
 
       <div className="assignments-list">
-        {assignments.map(ass => (
+        {assignments.length === 0 ? <p>No assignments available at the moment.</p> : assignments.map(ass => (
           <div key={ass._id} className="card">
             <h3>{ass.title}</h3>
             <p>{ass.description}</p>
-            <small>Scadenza: {ass.due_date || 'N/A'}</small>
+            <small>Due Date: {ass.due_date || 'No deadline'}</small>
             <button onClick={() => handleOpenSubmit(ass)} className="btn btn-primary">
-              Consegna
+              Submit Work
             </button>
           </div>
         ))}
       </div>
 
-      {/* Modale o Form di Consegna */}
+      {/* Submission Modal */}
       {selectedAssignment && (
         <div className="modal-overlay">
           <div className="modal">
-            <h3>Consegna per: {selectedAssignment.title}</h3>
+            <h3>Submit: {selectedAssignment.title}</h3>
             <form onSubmit={handleSubmit}>
               <div className="form-group">
-                <label>Nome e Cognome:</label>
+                <label>Full Name:</label>
                 <input
                   type="text"
                   required
+                  placeholder="John Doe"
                   value={formData.student_name}
                   onChange={e => setFormData({...formData, student_name: e.target.value})}
                 />
               </div>
               <div className="form-group">
-                <label>Risultato / Testo Compito:</label>
+                <label>Result / Answer:</label>
                 <textarea
                   required
+                  rows="5"
+                  placeholder="Type your answer here..."
                   value={formData.result}
                   onChange={e => setFormData({...formData, result: e.target.value})}
                 />
               </div>
-              <button type="submit" className="btn btn-success">Invia</button>
-              <button type="button" className="btn btn-secondary" onClick={() => setSelectedAssignment(null)}>Annulla</button>
+              <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
+                <button type="submit" className="btn btn-primary" style={{flex: 1}}>Send</button>
+                <button type="button" className="btn btn-secondary" onClick={() => setSelectedAssignment(null)}>Cancel</button>
+              </div>
             </form>
             {message && <p className="msg">{message}</p>}
           </div>
